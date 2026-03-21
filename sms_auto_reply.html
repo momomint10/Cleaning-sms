@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>입주청소 SMS 자동응답</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f1117;
+  --surface: #1a1d26;
+  --surface2: #22263a;
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.14);
+  --accent: #4f7cff;
+  --accent2: #7c5cfc;
+  --green: #22d4a0;
+  --amber: #f5a623;
+  --red: #ff5a6e;
+  --text: #f0f2ff;
+  --text2: #8b93b8;
+  --text3: #555d80;
+  --radius: 14px;
+  --radius-sm: 9px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; }
+
+/* ── Shell ── */
+.shell {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* ── Header ── */
+.header {
+  padding: 20px 20px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.logo {
+  display: flex; align-items: center; gap: 10px;
+}
+.logo-mark {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+.logo-text { font-size: 16px; font-weight: 700; }
+.logo-sub { font-size: 10px; color: var(--text2); margin-top: 1px; }
+.settings-btn {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+
+/* ── Tab bar ── */
+.tabs {
+  display: flex;
+  gap: 6px;
+  padding: 16px 20px 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+  flex-shrink: 0;
+  padding: 7px 14px;
+  border-radius: 20px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.tab.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+/* ── Pages ── */
+.page { display: none; flex: 1; padding: 16px 20px 100px; }
+.page.active { display: block; }
+
+/* ── Section label ── */
+.section-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text3);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  margin-top: 20px;
+}
+.section-label:first-child { margin-top: 0; }
+
+/* ── Card ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.card-inner { padding: 14px 16px; }
+
+/* ── Form ── */
+.field { margin-bottom: 12px; }
+.field:last-child { margin-bottom: 0; }
+.field label {
+  display: block;
+  font-size: 11.5px;
+  color: var(--text2);
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+.field input, .field select, .field textarea {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  padding: 11px 13px;
+  outline: none;
+  transition: border-color 0.2s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+  border-color: var(--accent);
+}
+.field textarea { resize: none; line-height: 1.6; }
+.field select { cursor: pointer; }
+
+/* ── Row ── */
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+
+/* ── Option chips ── */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  padding: 6px 13px;
+  border-radius: 20px;
+  font-size: 12.5px;
+  font-weight: 500;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.18s;
+  -webkit-user-select: none; user-select: none;
+}
+.chip.on {
+  background: rgba(79,124,255,0.18);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── Quote result ── */
+.quote-box {
+  background: linear-gradient(135deg, rgba(79,124,255,0.15), rgba(124,92,252,0.12));
+  border: 1px solid rgba(79,124,255,0.35);
+  border-radius: var(--radius);
+  padding: 18px 16px;
+  margin-bottom: 12px;
+}
+.quote-price {
+  font-size: 32px;
+  font-weight: 900;
+  color: var(--accent);
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+.quote-label { font-size: 11px; color: var(--text3); margin-bottom: 6px; }
+.quote-rows { margin-top: 12px; }
+.quote-row {
+  display: flex; justify-content: space-between;
+  font-size: 12.5px;
+  color: var(--text2);
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+}
+.quote-row:last-child { border-bottom: none; color: var(--text); font-weight: 500; }
+
+/* ── Message preview ── */
+.msg-box {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 14px;
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin-bottom: 12px;
+  position: relative;
+}
+.msg-char {
+  text-align: right;
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 6px;
+}
+
+/* ── Big copy button ── */
+.copy-btn {
+  width: 100%;
+  padding: 16px;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: opacity 0.2s, transform 0.15s;
+  margin-bottom: 10px;
+}
+.copy-btn:active { opacity: 0.85; transform: scale(0.98); }
+
+.copy-btn-sm {
+  width: 100%;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  transition: background 0.2s, transform 0.15s;
+  margin-bottom: 8px;
+}
+.copy-btn-sm:active { background: var(--surface); transform: scale(0.98); }
+
+/* ── FAQ ── */
+.faq-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+.faq-q {
+  padding: 13px 15px;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.faq-q .arrow { font-size: 11px; color: var(--text3); transition: transform 0.2s; }
+.faq-item.open .arrow { transform: rotate(180deg); }
+.faq-body {
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.3s ease;
+  padding: 0 15px;
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.7;
+  border-top: 0px solid var(--border);
+}
+.faq-item.open .faq-body {
+  max-height: 300px;
+  padding: 12px 15px;
+  border-top: 1px solid var(--border);
+}
+.faq-copy-btn {
+  margin-top: 10px;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  background: rgba(79,124,255,0.15);
+  border: 1px solid rgba(79,124,255,0.3);
+  color: var(--accent);
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 4px;
+}
+
+/* ── Inquiry list ── */
+.inq-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 13px 15px;
+  margin-bottom: 10px;
+  display: flex; align-items: flex-start; gap: 11px;
+}
+.inq-avatar {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 15px; color: #fff;
+  flex-shrink: 0;
+}
+.inq-name { font-size: 14px; font-weight: 700; }
+.inq-meta { font-size: 11.5px; color: var(--text2); margin-top: 2px; }
+.inq-btns { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.inq-btn {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 11.5px; font-weight: 600;
+  cursor: pointer;
+  border: none;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+.inq-btn-primary { background: var(--accent); color: #fff; }
+.inq-btn-ghost { background: var(--surface2); border: 1px solid var(--border2); color: var(--text2); }
+
+/* ── Status badges ── */
+.badge {
+  display: inline-flex; align-items: center;
+  padding: 2px 9px; border-radius: 20px;
+  font-size: 11px; font-weight: 600;
+  margin-left: 6px;
+}
+.badge-wait { background: rgba(245,166,35,0.18); color: var(--amber); }
+.badge-sent { background: rgba(34,212,160,0.18); color: var(--green); }
+.badge-done { background: rgba(79,124,255,0.18); color: var(--accent); }
+
+/* ── Settings ── */
+.setting-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.setting-row:last-child { border-bottom: none; }
+.setting-key { font-size: 13.5px; }
+.setting-val { font-size: 12.5px; color: var(--text2); }
+
+/* ── Price table ── */
+.price-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.price-table th {
+  padding: 9px 12px;
+  font-size: 11px; font-weight: 700;
+  color: var(--text3);
+  text-align: left;
+  background: var(--surface2);
+  letter-spacing: 0.04em;
+}
+.price-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text2);
+}
+.price-table tr:last-child td { border-bottom: none; }
+.price-highlight { color: var(--accent); font-weight: 700; font-size: 14px; }
+
+/* ── Bottom nav ── */
+.bottom-nav {
+  position: fixed;
+  bottom: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 100%; max-width: 480px;
+  background: rgba(15,17,23,0.92);
+  border-top: 1px solid var(--border2);
+  backdrop-filter: blur(16px);
+  display: flex;
+  padding: 8px 0 env(safe-area-inset-bottom, 8px);
+  z-index: 100;
+}
+.nav-item {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 4px 0;
+  cursor: pointer;
+  color: var(--text3);
+  font-size: 10px;
+  transition: color 0.15s;
+}
+.nav-item.active { color: var(--accent); }
+.nav-icon { font-size: 20px; line-height: 1; }
+
+/* ── Toast ── */
+#toast {
+  position: fixed;
+  bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--green);
+  color: #0f1117;
+  padding: 10px 22px;
+  border-radius: 22px;
+  font-size: 13px; font-weight: 700;
+  opacity: 0; transition: all 0.3s;
+  pointer-events: none; z-index: 999;
+  white-space: nowrap;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── Overlay / modal ── */
+.overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 200;
+  align-items: flex-end;
+}
+.overlay.open { display: flex; }
+.sheet {
+  background: var(--surface);
+  border-radius: 20px 20px 0 0;
+  width: 100%; max-width: 480px;
+  margin: 0 auto;
+  padding: 20px 20px 40px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.sheet-handle {
+  width: 36px; height: 4px;
+  background: var(--border2);
+  border-radius: 2px;
+  margin: 0 auto 18px;
+}
+.sheet-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+.save-btn {
+  width: 100%; padding: 14px;
+  background: var(--accent); color: #fff;
+  border: none; border-radius: var(--radius);
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 14px; font-weight: 700;
+  cursor: pointer; margin-top: 16px;
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">
+      <div class="logo-mark">🏠</div>
+      <div>
+        <div class="logo-text" id="h-company">클린케어</div>
+        <div class="logo-sub">입주청소 SMS 자동응답</div>
+      </div>
+    </div>
+    <div class="settings-btn" onclick="openSettings()">⚙</div>
+  </div>
+
+  <!-- Tab bar -->
+  <div class="tabs">
+    <div class="tab active" onclick="goTab('quote',this)">⚡ 빠른 견적</div>
+    <div class="tab" onclick="goTab('template',this)">💬 메시지 템플릿</div>
+    <div class="tab" onclick="goTab('inquiry',this)">📋 문의 목록</div>
+    <div class="tab" onclick="goTab('faq',this)">❓ FAQ</div>
+    <div class="tab" onclick="goTab('price',this)">📊 가격표</div>
+  </div>
+
+  <!-- ══ PAGE: 빠른 견적 ══ -->
+  <div id="page-quote" class="page active">
+
+    <div class="section-label">고객 정보</div>
+    <div class="card">
+      <div class="card-inner">
+        <div class="row2">
+          <div class="field">
+            <label>고객 이름</label>
+            <input id="p-name" placeholder="김OO" oninput="buildMsg()" />
+          </div>
+          <div class="field">
+            <label>평수</label>
+            <input id="p-size" type="number" placeholder="예: 32" oninput="buildMsg()" />
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label>청소 유형</label>
+            <select id="p-type" onchange="buildMsg()">
+              <option value="입주 전">입주 전 청소</option>
+              <option value="이사 후">이사 후 청소</option>
+              <option value="신축">신축 준공 청소</option>
+              <option value="생활">생활 청소</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>주거 형태</label>
+            <select id="p-house" onchange="buildMsg()">
+              <option value="1">아파트</option>
+              <option value="0.95">빌라/다세대</option>
+              <option value="1.1">단독주택</option>
+              <option value="1.05">오피스텔</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">추가 서비스</div>
+    <div class="card">
+      <div class="card-inner">
+        <div class="chips">
+          <div class="chip" id="opt-balcony" onclick="toggleChip(this,'발코니',30000)">🪟 발코니 +3만</div>
+          <div class="chip" id="opt-window" onclick="toggleChip(this,'창문청소',40000)">✨ 창문 +4만</div>
+          <div class="chip" id="opt-hood" onclick="toggleChip(this,'주방후드',25000)">🍳 후드 +2.5만</div>
+          <div class="chip" id="opt-ac" onclick="toggleChip(this,'에어컨',50000)">❄️ 에어컨 +5만</div>
+          <div class="chip" id="opt-fridge" onclick="toggleChip(this,'냉장고',35000)">🧊 냉장고 +3.5만</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">발송 옵션</div>
+    <div class="card">
+      <div class="card-inner">
+        <div class="chips">
+          <div class="chip on" id="opt-video" onclick="this.classList.toggle('on');buildMsg()">📹 홍보영상 포함</div>
+          <div class="chip on" id="opt-kakao" onclick="this.classList.toggle('on');buildMsg()">💬 카카오 링크</div>
+          <div class="chip" id="opt-review" onclick="this.classList.toggle('on');buildMsg()">⭐ 후기 링크</div>
+          <div class="chip on" id="opt-book" onclick="this.classList.toggle('on');buildMsg()">📅 예약 안내</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quote result -->
+    <div class="quote-box" id="quote-box" style="display:none;">
+      <div class="quote-label">예상 견적금액</div>
+      <div class="quote-price" id="quote-price">—</div>
+      <div class="quote-rows" id="quote-rows"></div>
+    </div>
+
+    <!-- Message preview -->
+    <div class="section-label">자동 생성 메시지</div>
+    <div class="msg-box" id="msg-output">평수와 고객명을 입력하면 메시지가 자동 완성됩니다 ✍️</div>
+    <div class="msg-char" id="msg-char"></div>
+
+    <button class="copy-btn" onclick="copyMain()">
+      📋 메시지 복사 → 문자 앱에 붙여넣기
+    </button>
+    <button class="copy-btn-sm" onclick="copyJustQuote()">
+      💰 견적 금액만 빠르게 복사
+    </button>
+  </div>
+
+  <!-- ══ PAGE: 메시지 템플릿 ══ -->
+  <div id="page-template" class="page">
+    <div class="section-label">상황별 메시지 템플릿</div>
+    <div id="tpl-name-row" class="card" style="margin-bottom:12px;">
+      <div class="card-inner">
+        <div class="field" style="margin:0;">
+          <label>고객 이름 (선택 — 적용 시 개인화됨)</label>
+          <input id="t-name" placeholder="김OO" oninput="renderTemplates()" />
+        </div>
+      </div>
+    </div>
+    <div id="template-list"></div>
+  </div>
+
+  <!-- ══ PAGE: 문의 목록 ══ -->
+  <div id="page-inquiry" class="page">
+    <div class="section-label">새 문의 등록</div>
+    <div class="card">
+      <div class="card-inner">
+        <div class="row2">
+          <div class="field">
+            <label>이름</label>
+            <input id="n-name" placeholder="김OO" />
+          </div>
+          <div class="field">
+            <label>연락처</label>
+            <input id="n-phone" placeholder="010-0000-0000" />
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label>평수</label>
+            <input id="n-size" type="number" placeholder="30" />
+          </div>
+          <div class="field">
+            <label>유형</label>
+            <select id="n-type">
+              <option>입주 전 청소</option>
+              <option>이사 후 청소</option>
+              <option>신축 준공</option>
+            </select>
+          </div>
+        </div>
+        <button class="copy-btn" style="margin-bottom:0;" onclick="addInquiry()">+ 문의 추가</button>
+      </div>
+    </div>
+
+    <div class="section-label">접수 목록</div>
+    <div id="inq-list"></div>
+  </div>
+
+  <!-- ══ PAGE: FAQ ══ -->
+  <div id="page-faq" class="page">
+    <div class="section-label">자주 묻는 질문 — 탭해서 답변 복사</div>
+    <div id="faq-list"></div>
+  </div>
+
+  <!-- ══ PAGE: 가격표 ══ -->
+  <div id="page-price" class="page">
+    <div class="section-label">평수별 기준 견적 (VAT 포함)</div>
+    <div class="card">
+      <table class="price-table">
+        <thead>
+          <tr>
+            <th>평수</th>
+            <th>입주 전</th>
+            <th>이사 후</th>
+            <th>신축</th>
+          </tr>
+        </thead>
+        <tbody id="price-tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="section-label">추가 서비스 요금</div>
+    <div class="card">
+      <table class="price-table">
+        <thead><tr><th>항목</th><th>금액</th></tr></thead>
+        <tbody>
+          <tr><td>발코니/베란다</td><td class="price-highlight">30,000원</td></tr>
+          <tr><td>창문 청소</td><td class="price-highlight">40,000원</td></tr>
+          <tr><td>주방 후드</td><td class="price-highlight">25,000원</td></tr>
+          <tr><td>에어컨 1대</td><td class="price-highlight">50,000원</td></tr>
+          <tr><td>냉장고 내부</td><td class="price-highlight">35,000원</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section-label">가격표 메시지 복사</div>
+    <button class="copy-btn" onclick="copyPriceTable()">📊 가격표 문자 복사</button>
+  </div>
+
+</div><!-- /shell -->
+
+<!-- ── Bottom nav ── -->
+<div class="bottom-nav">
+  <div class="nav-item active" id="nav-quote" onclick="goTab('quote',null,this)">
+    <div class="nav-icon">⚡</div><div>견적</div>
+  </div>
+  <div class="nav-item" id="nav-template" onclick="goTab('template',null,this)">
+    <div class="nav-icon">💬</div><div>템플릿</div>
+  </div>
+  <div class="nav-item" id="nav-inquiry" onclick="goTab('inquiry',null,this)">
+    <div class="nav-icon">📋</div><div>문의</div>
+  </div>
+  <div class="nav-item" id="nav-faq" onclick="goTab('faq',null,this)">
+    <div class="nav-icon">❓</div><div>FAQ</div>
+  </div>
+  <div class="nav-item" id="nav-price" onclick="goTab('price',null,this)">
+    <div class="nav-icon">📊</div><div>가격표</div>
+  </div>
+</div>
+
+<!-- ── Settings sheet ── -->
+<div class="overlay" id="settings-overlay" onclick="closeSettings(event)">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">⚙️ 업체 설정</div>
+    <div class="field"><label>업체명</label><input id="s-company" value="클린케어" /></div>
+    <div class="field"><label>대표 전화번호</label><input id="s-phone" value="010-1234-5678" /></div>
+    <div class="field"><label>홍보영상 URL</label><input id="s-video" value="https://youtu.be/샘플영상링크" /></div>
+    <div class="field"><label>카카오 채널 링크</label><input id="s-kakao" value="https://pf.kakao.com/샘플" /></div>
+    <div class="field"><label>후기 링크</label><input id="s-review" value="https://naver.me/후기링크" /></div>
+    <div class="field"><label>예약 폼 링크 (구글폼 등)</label><input id="s-book" value="https://forms.gle/예약폼링크" /></div>
+    <div class="field"><label>인사말 (앞부분)</label><textarea id="s-greeting" rows="2">안녕하세요! 😊 [업체명] 입주청소 전문팀입니다.</textarea></div>
+    <div class="section-label" style="margin-top:16px;">평수별 단가 (원/평, VAT 전)</div>
+    <div class="row3">
+      <div class="field"><label>~20평</label><input id="s-p1" type="number" value="8000" /></div>
+      <div class="field"><label>21~35평</label><input id="s-p2" type="number" value="6500" /></div>
+      <div class="field"><label>36평~</label><input id="s-p3" type="number" value="5500" /></div>
+    </div>
+    <button class="save-btn" onclick="saveSettings()">저장</button>
+  </div>
+</div>
+
+<div id="toast">✓ 복사되었습니다!</div>
+
+<script>
+// ── State ─────────────────────────────────────
+let cfg = {
+  company: '클린케어',
+  phone: '010-1234-5678',
+  video: 'https://youtu.be/샘플영상링크',
+  kakao: 'https://pf.kakao.com/샘플',
+  review: 'https://naver.me/후기링크',
+  book: 'https://forms.gle/예약폼링크',
+  greeting: '안녕하세요! 😊 [업체명] 입주청소 전문팀입니다.',
+  p1: 8000, p2: 6500, p3: 5500
+};
+
+const extras = { balcony:30000, window:40000, hood:25000, ac:50000, fridge:35000 };
+const extraLabels = { balcony:'발코니', window:'창문청소', hood:'주방후드', ac:'에어컨', fridge:'냉장고' };
+const rateByType = { '입주 전':1.0, '이사 후':0.85, '신축':1.15, '생활':0.65 };
+
+let inquiries = [
+  {id:1, name:'김민지', phone:'010-1234-5678', size:34, type:'입주 전 청소', status:'답변 대기'},
+  {id:2, name:'박준호', phone:'010-9876-5432', size:25, type:'이사 후 청소', status:'견적 발송'},
+];
+let nextId = 3;
+
+// ── Nav ───────────────────────────────────────
+function goTab(name, tabEl, navEl) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if(tabEl) tabEl.classList.add('active');
+  document.getElementById('nav-'+name)?.classList.add('active');
+  // find tab
+  const tabs = document.querySelectorAll('.tab');
+  const names = ['quote','template','inquiry','faq','price'];
+  tabs[names.indexOf(name)].classList.add('active');
+  if(name==='template') renderTemplates();
+  if(name==='inquiry') renderInquiries();
+  if(name==='faq') renderFaq();
+  if(name==='price') renderPriceTable();
+}
+
+// ── Quote calc ────────────────────────────────
+function getRate(size) {
+  if(size <= 20) return cfg.p1;
+  if(size <= 35) return cfg.p2;
+  return cfg.p3;
+}
+
+function buildMsg() {
+  const name = document.getElementById('p-name').value.trim();
+  const size = parseInt(document.getElementById('p-size').value);
+  const type = document.getElementById('p-type').value;
+  const houseAdj = parseFloat(document.getElementById('p-house').value);
+
+  if(!size) {
+    document.getElementById('msg-output').textContent = '평수와 고객명을 입력하면 메시지가 자동 완성됩니다 ✍️';
+    document.getElementById('msg-char').textContent = '';
+    document.getElementById('quote-box').style.display = 'none';
+    return;
+  }
+
+  const rate = getRate(size);
+  const base = Math.round(size * rate * houseAdj * rateByType[type]);
+  let extraTotal = 0;
+  let extraList = [];
+  ['balcony','window','hood','ac','fridge'].forEach(k => {
+    if(document.getElementById('opt-'+k)?.classList.contains('on')) {
+      extraTotal += extras[k];
+      extraList.push(extraLabels[k]);
+    }
+  });
+  const sub = base + extraTotal;
+  const vat = Math.round(sub * 0.1);
+  const total = sub + vat;
+
+  // Quote box
+  document.getElementById('quote-box').style.display = 'block';
+  document.getElementById('quote-price').textContent = total.toLocaleString() + '원';
+  document.getElementById('quote-rows').innerHTML = `
+    <div class="quote-row"><span>기본 청소 (${size}평)</span><span>${base.toLocaleString()}원</span></div>
+    ${extraList.map(l=>`<div class="quote-row"><span>+ ${l}</span><span>${extras[Object.keys(extraLabels).find(k=>extraLabels[k]===l)].toLocaleString()}원</span></div>`).join('')}
+    <div class="quote-row"><span>부가세 10%</span><span>${vat.toLocaleString()}원</span></div>
+    <div class="quote-row"><span>최종 합계 (VAT포함)</span><span>${total.toLocaleString()}원</span></div>
+  `;
+
+  // Build message
+  const nameStr = name ? name + '님' : '고객님';
+  const greet = cfg.greeting.replace('[업체명]', cfg.company);
+  let msg = `${greet}\n문의해 주셔서 감사합니다! 🙏\n\n`;
+  msg += `━━━━━━ 견적 안내 ━━━━━━\n`;
+  msg += `🏠 ${size}평 ${type} 청소\n`;
+  msg += `💰 예상 금액: ${total.toLocaleString()}원 (VAT포함)\n`;
+  msg += `⏰ 소요 시간: 약 ${Math.max(3,Math.ceil(size/8))}~${Math.max(4,Math.ceil(size/6))}시간\n`;
+  msg += `👥 투입 인원: 2~3명\n`;
+  if(extraList.length) msg += `✅ 추가 서비스: ${extraList.join(', ')}\n`;
+  msg += `━━━━━━━━━━━━━━━━━\n\n`;
+
+  if(document.getElementById('opt-video').classList.contains('on')) {
+    msg += `📹 시공 영상 보기\n${cfg.video}\n\n`;
+  }
+  if(document.getElementById('opt-review').classList.contains('on')) {
+    msg += `⭐ 고객 후기 보기\n${cfg.review}\n\n`;
+  }
+  if(document.getElementById('opt-book').classList.contains('on')) {
+    msg += `📅 예약 신청하기\n${cfg.book}\n\n`;
+  }
+  if(document.getElementById('opt-kakao').classList.contains('on')) {
+    msg += `💬 카카오 채널\n${cfg.kakao}\n\n`;
+  }
+  msg += `궁금하신 점 편하게 문의해 주세요!\n📞 ${cfg.phone}`;
+
+  const el = document.getElementById('msg-output');
+  el.textContent = msg;
+  document.getElementById('msg-char').textContent = `${msg.length}자 (SMS ${msg.length>90?'장문(LMS)':'단문'})`;
+}
+
+const chipExtras = {};
+function toggleChip(el, label, amount) {
+  el.classList.toggle('on');
+  buildMsg();
+}
+
+function copyMain() {
+  const t = document.getElementById('msg-output').textContent;
+  if(t.includes('자동 완성')) { toast('평수를 먼저 입력해 주세요!'); return; }
+  copyText(t, '메시지가 복사되었습니다!');
+}
+
+function copyJustQuote() {
+  const size = parseInt(document.getElementById('p-size').value);
+  const price = document.getElementById('quote-price').textContent;
+  if(!size) { toast('평수를 먼저 입력해 주세요!'); return; }
+  copyText(`${size}평 예상 견적: ${price} (VAT포함)`, '견적 금액 복사 완료!');
+}
+
+// ── Templates ─────────────────────────────────
+const templates = [
+  {
+    icon:'👋', title:'첫 문의 응답',
+    gen: n => {
+      const nn = n ? n+'님, ' : '';
+      return `${nn}안녕하세요! 😊 ${cfg.company} 입주청소 전문팀입니다.\n\n정확한 견적을 위해 아래 내용을 알려주시겠어요?\n\n📍 주소 및 평수\n🏠 주거 형태 (아파트/빌라/단독)\n🧹 청소 유형 (입주 전 / 이사 후)\n📅 희망 날짜\n\n빠르게 견적 안내드리겠습니다! 🙏\n📞 ${cfg.phone}`;
+    }
+  },
+  {
+    icon:'📞', title:'부재 중 자동응답',
+    gen: n => {
+      const nn = n ? n+'님, ' : '';
+      return `${nn}안녕하세요! ${cfg.company}입니다. 📞\n\n현재 작업 중이라 전화를 못 받았습니다.\n문자로 ①평수 ②날짜 ③유형 보내주시면 빠르게 연락드리겠습니다!\n\n📹 시공 영상: ${cfg.video}\n💬 카카오: ${cfg.kakao}`;
+    }
+  },
+  {
+    icon:'✅', title:'예약 확정 안내',
+    gen: n => {
+      const nn = n ? n+'님' : '고객님';
+      return `${nn}, 예약이 확정되었습니다! 🎉\n\n작업 당일 아래 사항 부탁드립니다.\n\n🚗 주차 공간 1자리\n🛗 엘리베이터 사용 가능 여부\n🔑 현관 비밀번호 또는 입장 방법\n\n최선을 다해 깨끗하게 청소해 드리겠습니다! 💪\n📞 ${cfg.phone}`;
+    }
+  },
+  {
+    icon:'📅', title:'작업 전날 리마인더',
+    gen: n => {
+      const nn = n ? n+'님' : '고객님';
+      return `${nn}, 내일 예정된 입주청소 일정 확인 연락 드립니다! 😊\n\n🕙 내일 오전 10시 도착 예정\n\n주소와 동/호수 한번 더 확인 부탁드려도 될까요?\n\n감사합니다! 🙏\n📞 ${cfg.phone}`;
+    }
+  },
+  {
+    icon:'📹', title:'홍보 영상 + 후기 발송',
+    gen: n => {
+      const nn = n ? n+'님' : '안녕하세요';
+      return `${nn} 😊\n\n저희 ${cfg.company} 시공 영상과 고객 후기입니다!\n꼼꼼한 청소를 직접 확인해 보세요.\n\n📹 시공 영상\n${cfg.video}\n\n⭐ 고객 후기\n${cfg.review}\n\n📅 예약 문의\n${cfg.book}\n\n언제든지 연락 주세요! 📞 ${cfg.phone}`;
+    }
+  },
+  {
+    icon:'💰', title:'가격 문의 응대',
+    gen: n => {
+      const nn = n ? n+'님' : '안녕하세요';
+      return `${nn}! 😊 가격 문의 감사드립니다.\n\n📊 기본 요금 안내 (VAT 포함)\n• 25평 입주 전 청소: 약 17만원~\n• 30평 입주 전 청소: 약 21만원~\n• 35평 입주 전 청소: 약 24만원~\n\n✅ 평수와 청소 범위에 따라 조정됩니다.\n\n정확한 견적은 평수를 알려주시면 바로 계산해 드릴게요!\n📞 ${cfg.phone}`;
+    }
+  },
+];
+
+function renderTemplates() {
+  const n = document.getElementById('t-name').value.trim();
+  document.getElementById('template-list').innerHTML = templates.map((t,i) => `
+    <div class="card" style="margin-bottom:10px;">
+      <div class="card-inner">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div style="font-size:14px;font-weight:700;">${t.icon} ${t.title}</div>
+        </div>
+        <div class="msg-box" style="font-size:12.5px;margin-bottom:10px;">${t.gen(n)}</div>
+        <button class="copy-btn" style="margin-bottom:0;padding:12px;font-size:13.5px;" onclick="copyTpl(${i})">📋 복사</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function copyTpl(i) {
+  const n = document.getElementById('t-name').value.trim();
+  copyText(templates[i].gen(n), '메시지 복사 완료!');
+}
+
+// ── Inquiries ─────────────────────────────────
+function addInquiry() {
+  const n = document.getElementById('n-name').value.trim();
+  const p = document.getElementById('n-phone').value.trim();
+  const s = parseInt(document.getElementById('n-size').value);
+  const t = document.getElementById('n-type').value;
+  if(!n||!p||!s) { toast('이름, 연락처, 평수를 입력해 주세요!'); return; }
+  inquiries.unshift({id:nextId++, name:n, phone:p, size:s, type:t, status:'답변 대기'});
+  ['n-name','n-phone','n-size'].forEach(id=>document.getElementById(id).value='');
+  renderInquiries();
+  toast('문의가 추가되었습니다!');
+}
+
+const statusBadge = {
+  '답변 대기':'<span class="badge badge-wait">대기중</span>',
+  '견적 발송':'<span class="badge badge-sent">견적완료</span>',
+  '예약 확정':'<span class="badge badge-done">예약확정</span>',
+};
+
+function renderInquiries() {
+  document.getElementById('inq-list').innerHTML = inquiries.map(inq => `
+    <div class="inq-item">
+      <div class="inq-avatar">${inq.name[0]}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;flex-wrap:wrap;">
+          <div class="inq-name">${inq.name}</div>
+          ${statusBadge[inq.status]||''}
+        </div>
+        <div class="inq-meta">${inq.phone} · ${inq.size}평 · ${inq.type}</div>
+        <div class="inq-btns">
+          <button class="inq-btn inq-btn-primary" onclick="quickQuote('${inq.name}','${inq.size}')">⚡ 바로 견적</button>
+          <select style="padding:4px 8px;border-radius:20px;font-size:11.5px;background:var(--surface2);border:1px solid var(--border2);color:var(--text2);font-family:inherit;" onchange="changeStatus(${inq.id},this.value)">
+            <option ${inq.status==='답변 대기'?'selected':''}>답변 대기</option>
+            <option ${inq.status==='견적 발송'?'selected':''}>견적 발송</option>
+            <option ${inq.status==='예약 확정'?'selected':''}>예약 확정</option>
+          </select>
+          <button class="inq-btn inq-btn-ghost" onclick="delInquiry(${inq.id})">삭제</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function quickQuote(name, size) {
+  goTab('quote', null, null);
+  setTimeout(() => {
+    document.getElementById('p-name').value = name;
+    document.getElementById('p-size').value = size;
+    buildMsg();
+    window.scrollTo({top:0,behavior:'smooth'});
+  }, 50);
+}
+
+function changeStatus(id, status) {
+  const inq = inquiries.find(i=>i.id===id);
+  if(inq) inq.status = status;
+}
+
+function delInquiry(id) {
+  inquiries = inquiries.filter(i=>i.id!==id);
+  renderInquiries();
+  toast('삭제되었습니다');
+}
+
+// ── FAQ ───────────────────────────────────────
+const faqs = [
+  { q:'청소 비용이 얼마예요?', a:'평수와 청소 유형에 따라 다릅니다. 25평 입주 전 청소 기준 약 17~19만원 선입니다. 평수 알려주시면 정확한 견적 바로 드려요!' },
+  { q:'몇 명이 오고, 얼마나 걸리나요?', a:'기본 2인 1조로 작업하며, 35평 이상은 3~4인 투입됩니다. 30평 기준 약 4~5시간 소요됩니다.' },
+  { q:'예약은 어떻게 하나요?', a:`예약폼으로 신청하시거나 문자/카카오로 ①날짜 ②주소 ③평수를 보내주시면 됩니다.\n예약폼: ${cfg.book}` },
+  { q:'당일 예약도 되나요?', a:'일정에 따라 가능할 수 있습니다. 최소 하루 전 예약을 권장드리며, 급하신 경우 연락 주세요!' },
+  { q:'에어컨/냉장고 청소도 되나요?', a:'별도 추가 서비스로 가능합니다.\n• 에어컨(벽걸이): 3만원\n• 에어컨(스탠드): 5만원\n• 냉장고 내부: 3.5만원' },
+  { q:'작업 후 문제가 생기면요?', a:'작업 완료 후 48시간 이내 연락 주시면 무상 재방문 처리해 드립니다!' },
+  { q:'어떤 세제를 사용하나요?', a:'전문 업무용 세제를 사용하며, 친환경 인증 제품 위주로 사용합니다. 영유아·반려동물 가정도 안심하셔도 됩니다.' },
+  { q:'주차는 어떻게 되나요?', a:'작업 당일 주차 공간 1자리를 부탁드립니다. 여의치 않으시면 미리 알려주시면 협의할게요.' },
+];
+
+function renderFaq() {
+  document.getElementById('faq-list').innerHTML = faqs.map((f,i) => `
+    <div class="faq-item" id="faq-${i}">
+      <div class="faq-q" onclick="toggleFaq(${i})">
+        <span>Q. ${f.q}</span>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="faq-body">
+        ${f.a.replace(/\n/g,'<br>')}
+        <br>
+        <button class="faq-copy-btn" onclick="copyText('${f.a.replace(/'/g,"\\'")}','FAQ 답변 복사 완료!')">📋 답변 복사</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleFaq(i) {
+  const el = document.getElementById('faq-'+i);
+  el.classList.toggle('open');
+}
+
+// ── Price table ───────────────────────────────
+function renderPriceTable() {
+  const sizes = [20,25,30,35,40,45,50];
+  document.getElementById('price-tbody').innerHTML = sizes.map(s => {
+    const rate = s<=20?cfg.p1:s<=35?cfg.p2:cfg.p3;
+    const calc = (adj) => Math.round(s*rate*adj*1.1).toLocaleString();
+    return `<tr>
+      <td><strong>${s}평</strong></td>
+      <td class="price-highlight">${calc(1.0)}원</td>
+      <td class="price-highlight">${calc(0.85)}원</td>
+      <td class="price-highlight">${calc(1.15)}원</td>
+    </tr>`;
+  }).join('');
+}
+
+function copyPriceTable() {
+  const sizes = [20,25,30,35,40,45];
+  let msg = `📊 ${cfg.company} 가격 안내 (VAT포함)\n`;
+  msg += `━━━━━━━━━━━━━━━━━\n`;
+  msg += `평수    입주전    이사후    신축\n`;
+  sizes.forEach(s => {
+    const rate = s<=20?cfg.p1:s<=35?cfg.p2:cfg.p3;
+    const f=(adj)=>Math.round(s*rate*adj*1.1/10000)+'만';
+    msg += `${s}평   ${f(1.0)}   ${f(0.85)}   ${f(1.15)}\n`;
+  });
+  msg += `━━━━━━━━━━━━━━━━━\n`;
+  msg += `추가: 발코니3만/창문4만/후드2.5만/에어컨5만\n\n`;
+  msg += `📞 ${cfg.phone}`;
+  copyText(msg, '가격표 복사 완료!');
+}
+
+// ── Settings ──────────────────────────────────
+function openSettings() {
+  ['company','phone','video','kakao','review','book'].forEach(k => {
+    document.getElementById('s-'+k).value = cfg[k];
+  });
+  document.getElementById('s-greeting').value = cfg.greeting;
+  ['p1','p2','p3'].forEach(k => document.getElementById('s-'+k).value = cfg[k]);
+  document.getElementById('settings-overlay').classList.add('open');
+}
+
+function closeSettings(e) {
+  if(e.target === document.getElementById('settings-overlay')) {
+    document.getElementById('settings-overlay').classList.remove('open');
+  }
+}
+
+function saveSettings() {
+  ['company','phone','video','kakao','review','book'].forEach(k => {
+    cfg[k] = document.getElementById('s-'+k).value.trim();
+  });
+  cfg.greeting = document.getElementById('s-greeting').value;
+  cfg.p1 = parseInt(document.getElementById('s-p1').value)||8000;
+  cfg.p2 = parseInt(document.getElementById('s-p2').value)||6500;
+  cfg.p3 = parseInt(document.getElementById('s-p3').value)||5500;
+  document.getElementById('h-company').textContent = cfg.company;
+  document.getElementById('settings-overlay').classList.remove('open');
+  buildMsg();
+  toast('설정이 저장되었습니다!');
+}
+
+// ── Utils ─────────────────────────────────────
+function copyText(t, msg) {
+  if(navigator.clipboard) {
+    navigator.clipboard.writeText(t).then(() => toast(msg||'복사되었습니다!'));
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = t; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+    toast(msg||'복사되었습니다!');
+  }
+}
+
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = (msg||'').startsWith('✓') ? msg : '✓ '+msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// Init
+renderTemplates();
+renderInquiries();
+renderFaq();
+renderPriceTable();
+</script>
+</body>
+</html>
